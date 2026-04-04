@@ -75,7 +75,7 @@ const int LIMIT_SWITCH_HIGH[] = {
     1, 1, 1, 1, 1, 1};  // to account for both NC and NO limit switches
 const int CAL_DIR[] = {-1, -1, 1,
                        -1, -1, 1};  // joint rotation direction to limit switch
-const int CAL_SPEED = 500;          // motor steps per second
+std::map<String, int> CAL_SPEED;  // motor steps per second, per model
 const float CAL_SPEED_MULT[] = {
     1, 1, 1, 1, 0.5, 1};  // multiplier to account for motor steps/rev
 // num of encoder steps in range of motion of joint
@@ -146,6 +146,12 @@ void setup() {
   REST_MOTOR_STEPS["mk1"] = REST_MOTOR_STEPS_MK1;
   REST_MOTOR_STEPS["mk2"] = REST_MOTOR_STEPS_MK2;
   REST_MOTOR_STEPS["mk3"] = REST_MOTOR_STEPS_MK3;
+
+  // mk1/mk2: 500 steps/s ~= 11 deg/s; mk3 steps/deg doubled by DIP switch
+  // change so 1000 steps/s restores the same angular speed
+  CAL_SPEED["mk1"] = 500;
+  CAL_SPEED["mk2"] = 500;
+  CAL_SPEED["mk3"] = 1000;
 
   for (int i = 0; i < NUM_JOINTS; ++i) {
     pinMode(STEP_PINS[i], OUTPUT);
@@ -395,7 +401,7 @@ bool moveToLimitSwitches(int* calJoints) {
   }
 
   for (int i = 0; i < NUM_JOINTS; i++) {
-    stepperJoints[i].setSpeed(CAL_SPEED * CAL_SPEED_MULT[i] * CAL_DIR[i]);
+    stepperJoints[i].setSpeed(CAL_SPEED[MODEL] * CAL_SPEED_MULT[i] * CAL_DIR[i]);
   }
   unsigned long startTime = millis();
   while (!calAllDone) {
@@ -428,7 +434,7 @@ bool moveToLimitSwitches(int* calJoints) {
 bool moveAwayFromLimitSwitch(int* calJoints) {
   for (int i = 0; i < NUM_JOINTS; i++) {
     if (calJoints[i]) {
-      stepperJoints[i].setSpeed(CAL_SPEED * CAL_SPEED_MULT[i] * CAL_DIR[i] *
+      stepperJoints[i].setSpeed(CAL_SPEED[MODEL] * CAL_SPEED_MULT[i] * CAL_DIR[i] *
                                 -1);
     }
   }
@@ -658,11 +664,12 @@ void stateTRAJ() {
   double lastVelocity[NUM_JOINTS];
   unsigned long lastVelocityCalc[NUM_JOINTS];
 
-  readMotorSteps(curMotorSteps);
-
+  // MODEL is not set yet, so we can't call readMotorSteps here.
+  // Initialize to zero; velocity tracking will stabilize after first reading.
   for (int i = 0; i < NUM_JOINTS; ++i) {
+    curMotorSteps[i] = 0;
+    lastMotorSteps[i] = 0;
     lastVelocityCalc[i] = micros();
-    lastMotorSteps[i] = curMotorSteps[i];
   }
 
   // start loop
