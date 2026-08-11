@@ -190,8 +190,11 @@ bool TeensyDriver::exchange(std::string outMsg) {
         updateEStopStatus(inMsg);
       } else if (header == "ER") {
         // error message
-        RCLCPP_INFO(logger_, "ERROR message: %s", inMsg.c_str());
+        RCLCPP_ERROR(logger_, "ERROR message: %s", inMsg.c_str());
         return false;
+      } else if (header == "HL") {
+        // Hardware log message
+        RCLCPP_INFO(logger_, "[HARDWARE] %s", inMsg.substr(2).c_str());
       } else {
         // unknown header
         RCLCPP_WARN(logger_, "Unknown header %s", header.c_str());
