@@ -162,48 +162,57 @@ bool TeensyDriver::exchange(std::string outMsg) {
     return false;
   }
 
-  while (true) {
+  while (true)
+{
     receive(inMsg);
+
     std::string header = inMsg.substr(0, 2);
 
+    // Asynchronous messages
     if (header == "DB") {
-      // debug message
-      RCLCPP_DEBUG(logger_, "Debug message: %s", inMsg.c_str());
-    } else if (header == "WN") {
-      // warning message
-      RCLCPP_WARN(logger_, "Warning: %s", inMsg.c_str());
-    } else {
-      if (header == "ST") {
-        // init acknowledgement
-        checkInit(inMsg);
-      } else if (header == "JC") {
-        // encoder calibration values
-        updateEncoderCalibrations(inMsg);
-      } else if (header == "JP") {
-        // encoder steps
-        updateJointPositions(inMsg);
-      } else if (header == "JV") {
-        // encoder steps
-        updateJointVelocities(inMsg);
-      } else if (header == "ES") {
-        // estop status
-        updateEStopStatus(inMsg);
-      } else if (header == "ER") {
-        // error message
-        RCLCPP_ERROR(logger_, "ERROR message: %s", inMsg.c_str());
-        return false;
-      } else if (header == "HL") {
-        // Hardware log message
+        RCLCPP_DEBUG(logger_, "%s", inMsg.c_str());
+        continue;
+    }
+    else if (header == "IN") {
+        RCLCPP_INFO(logger_, "%s", inMsg.c_str());
+        continue;
+    }
+    else if (header == "HL") {
         RCLCPP_INFO(logger_, "[HARDWARE] %s", inMsg.substr(2).c_str());
-      } else {
-        // unknown header
+        continue;
+    }
+    else if (header == "WN") {
+        RCLCPP_WARN(logger_, "%s", inMsg.c_str());
+        continue;
+    }
+
+    // Actual responses
+    if (header == "ST") {
+        checkInit(inMsg);
+    }
+    else if (header == "JC") {
+        updateEncoderCalibrations(inMsg);
+    }
+    else if (header == "JP") {
+        updateJointPositions(inMsg);
+    }
+    else if (header == "JV") {
+        updateJointVelocities(inMsg);
+    }
+    else if (header == "ES") {
+        updateEStopStatus(inMsg);
+    }
+    else if (header == "ER") {
+        RCLCPP_ERROR(logger_, "%s", inMsg.c_str());
+        return false;
+    }
+    else {
         RCLCPP_WARN(logger_, "Unknown header %s", header.c_str());
         return false;
-      }
-      return true;
     }
+
+    return true;
   }
-  return true;
 }
 
 bool TeensyDriver::transmit(std::string msg, std::string& err) {
