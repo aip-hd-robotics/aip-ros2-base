@@ -167,6 +167,15 @@ bool TeensyDriver::exchange(std::string outMsg) {
     receive(inMsg);
 
     std::string header = inMsg.substr(0, 2);
+    
+    
+    RCLCPP_INFO(
+    logger_,
+    "RAW received: '%s' | Header: '%s'",
+    inMsg.c_str(),
+    header.c_str()
+);
+    
 
     // Asynchronous messages
     if (header == "DB") {
