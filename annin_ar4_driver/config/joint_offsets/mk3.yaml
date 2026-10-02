@@ -1,6 +1,6 @@
-joint_1: 170.0
-joint_2: -42.0
-joint_3: -89.0
-joint_4: -180.0
-joint_5: -105.0
-joint_6: -180.0
+joint_1: 174.0
+joint_2: -42.0    # -42.0 Original
+joint_3: -91.0    # -89.0 Original
+joint_4: -156.0   # -180.0 Original
+joint_5: -118.8   # -105.0 Original
+joint_6: -180.0   # -180.0 Original

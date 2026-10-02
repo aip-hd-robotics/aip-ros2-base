@@ -1,0 +1,25 @@
+joint_names:
+  - joint_1
+  - joint_2
+  - joint_3
+  - joint_4
+  - joint_5
+  - joint_6
+
+poses:
+  home:
+    positions:
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 0.0
+  upright:
+    positions:
+      - 0.0
+      - -0.087
+      - -1.4
+      - 0.0
+      - 0.0
+      - 0.0

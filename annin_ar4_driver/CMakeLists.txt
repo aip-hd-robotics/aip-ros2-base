@@ -72,6 +72,8 @@ install(DIRECTORY config launch urdf
 
 install(PROGRAMS
   scripts/reset_estop.sh
+  scripts/go_to_named_position.py
+  scripts/run_named_positions.sh
   DESTINATION lib/${PROJECT_NAME}
 )
 

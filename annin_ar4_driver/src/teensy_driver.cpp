@@ -14,6 +14,8 @@ bool TeensyDriver::init(std::string ar_model, std::string port, int baudrate,
   version_ = FW_VERSION;
   ar_model_ = ar_model;
 
+  RCLCPP_INFO(logger_, "Teensy init: opening port %s", port.c_str());
+
   // establish connection with teensy board
   boost::system::error_code ec;
   serial_port_.open(port, ec);
@@ -32,10 +34,13 @@ bool TeensyDriver::init(std::string ar_model, std::string port, int baudrate,
 
   initialised_ = false;
   std::string msg = "STA" + version_ + "B" + ar_model_ + "\n";
+  RCLCPP_INFO(logger_, "Teensy init: waiting for handshake reply to '%s'",
+              msg.c_str());
 
+  int attempt = 0;
   while (!initialised_) {
-    RCLCPP_INFO(logger_, "Waiting for response from Teensy on port %s",
-                port.c_str());
+    ++attempt;
+    RCLCPP_INFO(logger_, "Teensy init: attempt %d", attempt);
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     exchange(msg);
   }
@@ -157,6 +162,7 @@ bool TeensyDriver::exchange(std::string outMsg) {
   std::string errTransmit = "";
 
   // RCLCPP_INFO(logger_, "Sending message: %s", outMsg.c_str());
+  RCLCPP_DEBUG(logger_, "exchange: sending '%s'", outMsg.c_str());
   if (!transmit(outMsg, errTransmit)) {
     RCLCPP_ERROR(logger_, "Error in transmit: %s", errTransmit.c_str());
     return false;
@@ -167,15 +173,17 @@ bool TeensyDriver::exchange(std::string outMsg) {
     receive(inMsg);
 
     std::string header = inMsg.substr(0, 2);
+    RCLCPP_DEBUG(logger_, "exchange: received '%s' (header '%s')",
+                 inMsg.c_str(), header.c_str());
     
-    
+    /*
     RCLCPP_INFO(
     logger_,
     "RAW received: '%s' | Header: '%s'",
     inMsg.c_str(),
-    header.c_str()
-);
-    
+    header.c_str(),
+    );
+    */    
 
     // Asynchronous messages
     if (header == "DB") {
@@ -242,6 +250,7 @@ void TeensyDriver::receive(std::string& inMsg) {
   char c;
   std::string msg = "";
   bool eol = false;
+  RCLCPP_DEBUG(logger_, "receive: waiting for newline-terminated message");
   while (!eol) {
     boost::asio::read(serial_port_, boost::asio::buffer(&c, 1));
     switch (c) {
@@ -258,6 +267,7 @@ void TeensyDriver::receive(std::string& inMsg) {
 }
 
 void TeensyDriver::checkInit(std::string msg) {
+  RCLCPP_DEBUG(logger_, "checkInit: raw message '%s'", msg.c_str());
   std::size_t ack_idx = msg.find("A", 2) + 1;
   std::size_t version_idx = msg.find("B", 2) + 1;
   std::size_t ar_model_matched_idx = msg.find("C", 2) + 1;
@@ -265,6 +275,8 @@ void TeensyDriver::checkInit(std::string msg) {
   int ack = std::stoi(msg.substr(ack_idx, version_idx));
   int ar_model_matched =
       std::stoi(msg.substr(ar_model_matched_idx, ar_model_idx));
+  RCLCPP_DEBUG(logger_, "checkInit: ack=%d ar_model_matched=%d", ack,
+               ar_model_matched);
   if (!ack) {
     std::string version = msg.substr(version_idx);
     RCLCPP_ERROR(logger_, "Firmware version mismatch %s", version.c_str());
@@ -275,6 +287,7 @@ void TeensyDriver::checkInit(std::string msg) {
   }
   if (ack && ar_model_matched) {
     initialised_ = true;
+    RCLCPP_INFO(logger_, "!!!!!!!!SUCCESSFULLY INITIALIZED ROS AND CONTROLLER!!!!!!!!");
   }
 }
 

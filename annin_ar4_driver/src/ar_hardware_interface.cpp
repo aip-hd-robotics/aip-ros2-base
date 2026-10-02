@@ -16,6 +16,7 @@ hardware_interface::CallbackReturn ARHardwareInterface::on_init(
   init_variables();
 
   // init motor driver
+  RCLCPP_INFO(logger_, "on_init: starting Teensy driver init");
   std::string serial_port = info_.hardware_parameters.at("serial_port");
   std::string ar_model = info_.hardware_parameters.at("ar_model");
   std::string velocity_control_p =
@@ -25,12 +26,16 @@ hardware_interface::CallbackReturn ARHardwareInterface::on_init(
   int baud_rate = 115200;
   bool success = driver_.init(ar_model, serial_port, baud_rate,
                               info_.joints.size(), velocity_control_enabled);
+  RCLCPP_INFO(logger_, "on_init: Teensy driver init returned %s",
+              success ? "true" : "false");
   if (!success) {
     return hardware_interface::CallbackReturn::ERROR;
   }
 
   // calibrate joints if needed
   bool calibrate = info_.hardware_parameters.at("calibrate") == "True";
+  RCLCPP_INFO(logger_, "on_init: calibrate flag is %s",
+              calibrate ? "true" : "false");
   if (calibrate) {
     // run calibration
     RCLCPP_INFO(logger_, "Running joint calibration...");
@@ -41,10 +46,12 @@ hardware_interface::CallbackReturn ARHardwareInterface::on_init(
       return hardware_interface::CallbackReturn::ERROR;
     }
 
+    RCLCPP_INFO(logger_, "on_init: calling driver_.calibrateJoints");
     if (!driver_.calibrateJoints(calib_sequence)) {
       RCLCPP_INFO(logger_, "calibration failed.");
       return hardware_interface::CallbackReturn::ERROR;
     }
+    RCLCPP_INFO(logger_, "on_init: driver_.calibrateJoints returned true");
   }
   RCLCPP_INFO(logger_, "calibration succeeded.");
 

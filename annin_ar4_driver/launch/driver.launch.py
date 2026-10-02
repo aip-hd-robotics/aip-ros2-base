@@ -4,7 +4,7 @@ from launch_ros.substitutions import FindPackageShare
 
 from launch.conditions import IfCondition
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, TimerAction
 from launch.substitutions import LaunchConfiguration
 from launch.substitutions import Command, FindExecutable, PathJoinSubstitution
 
@@ -48,6 +48,7 @@ def generate_launch_description():
     controller_manager_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
+        name="controller_manager",
         parameters=[
             ParameterFile(joint_controllers_cfg, allow_substs=True),
             {
@@ -141,8 +142,10 @@ def generate_launch_description():
                               choices=["mk1", "mk2", "mk3"],
                               description="Model of AR4"))
     ld.add_action(controller_manager_node)
-    ld.add_action(spawn_joint_controller)
-    ld.add_action(gripper_controller_spawner)
+    # Delay spawners to give the hardware driver time to finish calibration and
+    # to avoid lock acquisition contention in the controller manager.
+    ld.add_action(TimerAction(period=5.0, actions=[joint_state_broadcaster]))
+    ld.add_action(TimerAction(period=7.0, actions=[spawn_joint_controller]))
+    ld.add_action(TimerAction(period=9.0, actions=[gripper_controller_spawner]))
     ld.add_action(robot_state_publisher_node)
-    ld.add_action(joint_state_broadcaster)
     return ld
